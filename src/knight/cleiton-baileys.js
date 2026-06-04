@@ -97,6 +97,7 @@ const tempDir = join(process.cwd(), 'temp');
 const profilePhotoDir = join(process.cwd(), 'data', 'profile-photos');
 const groupExitAudioPath = join(process.cwd(), 'public', 'assets', 'saida-grupo.ogg');
 const pesteAudioPath = join(process.cwd(), 'public', 'assets', 'seu-peste.ogg');
+const gloriaAudioPath = join(process.cwd(), 'public', 'assets', 'gloria.ogg');
 const configDir = join(process.cwd(), 'config');
 const cleitonConfigPath = join(configDir, 'cleiton-config.json');
 const fixedOwnerNumber = '5522981347316';
@@ -672,6 +673,7 @@ async function processMessage(message) {
   if (command === 'del' || command === 'delete' || command === 'apagar' || command === 'limpar') return deleteQuotedCommand(chatId, message);
   if (command === 'saiu') return exitAudioCommand(chatId, message);
   if (command === 'peste') return pesteAudioCommand(chatId, message);
+  if (command === 'gloria') return gloriaAudioCommand(chatId, message);
   if (command === 'seradm') return ownerPromoteSelfCommand(chatId, message);
   if (command === 'arquivargp') return archiveGroupCommand(chatId, message);
   if (['kick', 'ban', 'promover', 'promote', 'rebaixar', 'demote', 'fechargp', 'abrirgp', 'opengp', 'closegp'].includes(command)) return groupAdminCommand(chatId, command, message);
@@ -3000,6 +3002,11 @@ async function exitAudioCommand(chatId, quoted) {
 async function pesteAudioCommand(chatId, quoted) {
   const sent = await sendVoiceAsset(chatId, pesteAudioPath, quoted, 'pesteAudio');
   if (!sent) return sendText(chatId, 'Não consegui enviar o áudio do peste agora.', quoted);
+}
+
+async function gloriaAudioCommand(chatId, quoted) {
+  const sent = await sendVoiceAsset(chatId, gloriaAudioPath, quoted, 'gloriaAudio');
+  if (!sent) return sendText(chatId, 'Não consegui enviar o áudio da glória agora.', quoted);
 }
 
 async function ownerPromoteSelfCommand(chatId, quoted) {
