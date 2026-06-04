@@ -1025,7 +1025,13 @@ function menuCardCaption(key = 'menu', category = getCategory('menu')) {
 }
 
 function menuCardItems(key = 'menu', category = getCategory('menu')) {
-  if (key !== 'menu') return (category.commands || []).map((command) => ({ command, label: command, detail: menuCommandDetail(command) }));
+  if (key !== 'menu') {
+    return (category.commands || []).map((command) => ({
+      command,
+      label: command,
+      detail: key === 'menuaudio' ? '' : menuCommandDetail(command)
+    }));
+  }
   return (category.commands || []).map((command) => {
     const child = getCategory(command);
     return {
