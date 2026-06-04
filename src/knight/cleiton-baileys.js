@@ -669,6 +669,7 @@ async function processMessage(message) {
   if (['rank', 'rankativo', 'topmembers', 'ranksemanal', 'rankmensal'].includes(command)) return rankCommand(chatId, message, command);
   if (command === 'relatorio') return reportCommand(chatId, message);
   if (command === 'del' || command === 'delete' || command === 'apagar' || command === 'limpar') return deleteQuotedCommand(chatId, message);
+  if (command === 'saiu') return exitAudioCommand(chatId, message);
   if (command === 'seradm') return ownerPromoteSelfCommand(chatId, message);
   if (command === 'arquivargp') return archiveGroupCommand(chatId, message);
   if (['kick', 'ban', 'promover', 'promote', 'rebaixar', 'demote', 'fechargp', 'abrirgp', 'opengp', 'closegp'].includes(command)) return groupAdminCommand(chatId, command, message);
@@ -750,17 +751,18 @@ async function handleGroupParticipantsUpdate(event) {
   }
 }
 
-async function sendGroupExitAudio(chatId) {
+async function sendGroupExitAudio(chatId, options = {}) {
+  const { force = false, quoted = null } = options;
   if (!existsSync(groupExitAudioPath)) {
     debugLog('GROUP_EXIT_AUDIO_MISSING', { path: groupExitAudioPath });
     return false;
   }
   const now = Date.now();
-  if ((groupExitAudioSuppressedUntil.get(chatId) || 0) > now) {
+  if (!force && (groupExitAudioSuppressedUntil.get(chatId) || 0) > now) {
     debugLog('GROUP_EXIT_AUDIO_SUPPRESSED', { chat: shortJid(chatId) });
     return false;
   }
-  if ((groupExitAudioCooldown.get(chatId) || 0) > now) {
+  if (!force && (groupExitAudioCooldown.get(chatId) || 0) > now) {
     debugLog('GROUP_EXIT_AUDIO_COOLDOWN', { chat: shortJid(chatId) });
     return false;
   }
@@ -769,7 +771,7 @@ async function sendGroupExitAudio(chatId) {
     audio: readFileSync(groupExitAudioPath),
     mimetype: 'audio/ogg; codecs=opus',
     ptt: true
-  }, undefined, 'groupExitAudio'));
+  }, quoted ? { quoted } : undefined, 'groupExitAudio'));
 }
 
 function isVoluntaryGroupExit(event = {}) {
@@ -2975,6 +2977,14 @@ async function groupAdminCommand(chatId, command, quoted) {
   await sock.groupParticipantsUpdate(chatId, [target], 'remove');
   addHistory(chatId, target, command, senderJid(quoted), 'baileys');
   await sendModerationCard(chatId, 'REMOVIDO', displayNameForCard(chatId, target, meta, quoted, mention), 'Saida registrada pela Cleiton.', [mention.jid], quoted, 'kickCard', target);
+}
+
+async function exitAudioCommand(chatId, quoted) {
+  if (!chatId.endsWith('@g.us')) return sendText(chatId, 'Esse comando só funciona em grupo.', quoted);
+  const meta = await requireActorAdmin(chatId, senderJid(quoted), quoted);
+  if (!meta) return;
+  const sent = await sendGroupExitAudio(chatId, { force: true, quoted });
+  if (!sent) return sendText(chatId, 'Não consegui enviar o áudio de saída agora.', quoted);
 }
 
 async function ownerPromoteSelfCommand(chatId, quoted) {
