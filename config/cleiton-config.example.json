@@ -1,0 +1,12 @@
+{
+  "fixedOwner": "5522981347316",
+  "extraOwners": [
+    "5522981347316"
+  ],
+  "discord": {
+    "enabled": true,
+    "logsWebhookUrl": "",
+    "messagesWebhookUrl": "",
+    "groupSnapshotIntervalMinutes": 60
+  }
+}

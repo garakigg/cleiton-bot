@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cleiton da Ouvidoria</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="header">
+        <img src="/assets/cleiton.jpeg" alt="Cleiton da Ouvidoria">
+        <div>
+          <p class="eyebrow">painel local</p>
+          <h1>Cleiton da Ouvidoria</h1>
+          <p class="sub">A barata atendente cuidando do grupo, dos links suspeitos e dos protocolos de bom senso.</p>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div><span>Status</span><strong id="status">...</strong></div>
+        <div><span>Grupos vistos</span><strong id="groupsCount">0</strong></div>
+        <div><span>Evento</span><strong id="lastEvent">...</strong></div>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Configuracoes</h2>
+            <button id="save">Salvar</button>
+          </div>
+          <label>Prefixo<input id="COMMAND_PREFIX"></label>
+          <label>Grupos permitidos<input id="GRUPOS_PERMITIDOS" placeholder="Familia,Vendas"></label>
+          <label>Antilink<select id="ANTILINK_ENABLED"><option>true</option><option>false</option></select></label>
+          <label>Antispam<select id="ANTISPAM_ENABLED"><option>true</option><option>false</option></select></label>
+          <label>Max mensagens spam<input id="SPAM_MAX_MESSAGES" type="number"></label>
+          <label>Janela spam segundos<input id="SPAM_WINDOW_SECONDS" type="number"></label>
+          <label>Mute automatico minutos<input id="AUTO_MUTE_MINUTES" type="number"></label>
+          <label>Regras<textarea id="REGRAS_GRUPO" rows="5"></textarea></label>
+          <label>Prompt do Cleiton<textarea id="BOT_PROMPT" rows="7"></textarea></label>
+        </div>
+
+        <div class="panel">
+          <h2>Grupos</h2>
+          <div id="groups" class="list"></div>
+        </div>
+
+        <div class="panel wide">
+          <h2>Ocorrencias</h2>
+          <div id="logs" class="log-list"></div>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
