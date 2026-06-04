@@ -95,7 +95,7 @@ seedDefaults(defaults);
 const sessionDir = join(process.cwd(), 'session-cleiton');
 const tempDir = join(process.cwd(), 'temp');
 const profilePhotoDir = join(process.cwd(), 'data', 'profile-photos');
-const groupExitAudioPath = join(process.cwd(), 'public', 'assets', 'saida-grupo.mp3');
+const groupExitAudioPath = join(process.cwd(), 'public', 'assets', 'saida-grupo.ogg');
 const configDir = join(process.cwd(), 'config');
 const cleitonConfigPath = join(configDir, 'cleiton-config.json');
 const fixedOwnerNumber = '5522981347316';
@@ -767,7 +767,7 @@ async function sendGroupExitAudio(chatId) {
   groupExitAudioCooldown.set(chatId, now + 12000);
   return Boolean(await safeSendMessage(chatId, {
     audio: readFileSync(groupExitAudioPath),
-    mimetype: 'audio/mpeg',
+    mimetype: 'audio/ogg; codecs=opus',
     ptt: true
   }, undefined, 'groupExitAudio'));
 }
