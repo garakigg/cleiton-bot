@@ -96,6 +96,7 @@ const sessionDir = join(process.cwd(), 'session-cleiton');
 const tempDir = join(process.cwd(), 'temp');
 const profilePhotoDir = join(process.cwd(), 'data', 'profile-photos');
 const groupExitAudioPath = join(process.cwd(), 'public', 'assets', 'saida-grupo.ogg');
+const pesteAudioPath = join(process.cwd(), 'public', 'assets', 'seu-peste.ogg');
 const configDir = join(process.cwd(), 'config');
 const cleitonConfigPath = join(configDir, 'cleiton-config.json');
 const fixedOwnerNumber = '5522981347316';
@@ -670,6 +671,7 @@ async function processMessage(message) {
   if (command === 'relatorio') return reportCommand(chatId, message);
   if (command === 'del' || command === 'delete' || command === 'apagar' || command === 'limpar') return deleteQuotedCommand(chatId, message);
   if (command === 'saiu') return exitAudioCommand(chatId, message);
+  if (command === 'peste') return pesteAudioCommand(chatId, message);
   if (command === 'seradm') return ownerPromoteSelfCommand(chatId, message);
   if (command === 'arquivargp') return archiveGroupCommand(chatId, message);
   if (['kick', 'ban', 'promover', 'promote', 'rebaixar', 'demote', 'fechargp', 'abrirgp', 'opengp', 'closegp'].includes(command)) return groupAdminCommand(chatId, command, message);
@@ -767,11 +769,19 @@ async function sendGroupExitAudio(chatId, options = {}) {
     return false;
   }
   groupExitAudioCooldown.set(chatId, now + 12000);
+  return sendVoiceAsset(chatId, groupExitAudioPath, quoted, 'groupExitAudio');
+}
+
+async function sendVoiceAsset(chatId, audioPath, quoted = null, label = 'voiceAsset') {
+  if (!existsSync(audioPath)) {
+    debugLog('VOICE_ASSET_MISSING', { label, path: audioPath });
+    return false;
+  }
   return Boolean(await safeSendMessage(chatId, {
-    audio: readFileSync(groupExitAudioPath),
+    audio: readFileSync(audioPath),
     mimetype: 'audio/ogg; codecs=opus',
     ptt: true
-  }, quoted ? { quoted } : undefined, 'groupExitAudio'));
+  }, quoted ? { quoted } : undefined, label));
 }
 
 function isVoluntaryGroupExit(event = {}) {
@@ -2985,6 +2995,11 @@ async function exitAudioCommand(chatId, quoted) {
   if (!meta) return;
   const sent = await sendGroupExitAudio(chatId, { force: true, quoted });
   if (!sent) return sendText(chatId, 'Não consegui enviar o áudio de saída agora.', quoted);
+}
+
+async function pesteAudioCommand(chatId, quoted) {
+  const sent = await sendVoiceAsset(chatId, pesteAudioPath, quoted, 'pesteAudio');
+  if (!sent) return sendText(chatId, 'Não consegui enviar o áudio do peste agora.', quoted);
 }
 
 async function ownerPromoteSelfCommand(chatId, quoted) {
