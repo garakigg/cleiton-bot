@@ -1045,7 +1045,8 @@ function menuCategoryName(key = '', title = '') {
     menudono: 'Dono',
     menumemb: 'Membros',
     menubrin: 'Brincadeiras',
-    ferramentas: 'Ferramentas'
+    ferramentas: 'Ferramentas',
+    menuaudio: 'Audios'
   };
   return names[key] || String(title || key).replace(/^MENU\s+/i, '');
 }
@@ -1059,7 +1060,8 @@ function menuCategoryDetail(key = '') {
     menudono: 'configuracoes internas',
     menumemb: 'perfil, rank e regras',
     menubrin: 'jogos e cards',
-    ferramentas: 'QR, voz, aviso e utilidades'
+    ferramentas: 'QR, voz, aviso e utilidades',
+    menuaudio: 'falas rapidas'
   };
   return details[key] || 'setor do bot';
 }
@@ -1106,7 +1108,20 @@ function menuCommandDetail(command = '') {
     tapa: 'gif de tapa',
     wanted: 'card wanted',
     preso: 'card preso',
-    wasted: 'card wasted'
+    wasted: 'card wasted',
+    peste: 'audio rapido',
+    gloria: 'audio rapido',
+    armando: 'audio rapido',
+    duvida: 'audio rapido',
+    bloquear: 'audio rapido',
+    costa: 'audio rapido',
+    paciencia: 'audio rapido',
+    superbone: 'audio rapido',
+    acheigraca: 'audio rapido',
+    interiajar: 'audio rapido',
+    surtada: 'audio rapido',
+    vomarnao: 'audio rapido',
+    tempeixe: 'audio rapido'
   };
   return details[command] || 'comando ativo';
 }

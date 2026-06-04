@@ -43,6 +43,11 @@ const categories = {
     title: 'MENU BRINCADEIRAS',
     aliases: ['menubrin', 'menubrincadeiras', 'brincadeiras', 'funmenu', 'menufun'],
     commands: ['casal', 'quiz', 'dueloquiz', 'roletarussa', 'tapa', 'wanted', 'preso', 'wasted', 'responder']
+  },
+  menuaudio: {
+    title: 'MENU AUDIOS',
+    aliases: ['menuaudio', 'menuaudios', 'audios', 'menuvoz'],
+    commands: ['peste', 'gloria', 'armando', 'duvida', 'bloquear', 'costa', 'paciencia', 'superbone', 'acheigraca', 'interiajar', 'surtada', 'vomarnao', 'tempeixe']
   }
 };
 
