@@ -106,6 +106,7 @@ const pacienciaAudioPath = join(process.cwd(), 'public', 'assets', 'paciencia.og
 const superboneAudioPath = join(process.cwd(), 'public', 'assets', 'superbone.ogg');
 const acheiGracaAudioPath = join(process.cwd(), 'public', 'assets', 'acheigraca.ogg');
 const interiajarAudioPath = join(process.cwd(), 'public', 'assets', 'interiajar.ogg');
+const surtadaAudioPath = join(process.cwd(), 'public', 'assets', 'surtada.ogg');
 const configDir = join(process.cwd(), 'config');
 const cleitonConfigPath = join(configDir, 'cleiton-config.json');
 const fixedOwnerNumber = '5522981347316';
@@ -690,6 +691,7 @@ async function processMessage(message) {
   if (command === 'superbone') return superboneAudioCommand(chatId, message);
   if (command === 'acheigraca') return acheiGracaAudioCommand(chatId, message);
   if (command === 'interiajar') return interiajarAudioCommand(chatId, message);
+  if (command === 'surtada') return surtadaAudioCommand(chatId, message);
   if (command === 'seradm') return ownerPromoteSelfCommand(chatId, message);
   if (command === 'arquivargp') return archiveGroupCommand(chatId, message);
   if (['kick', 'ban', 'promover', 'promote', 'rebaixar', 'demote', 'fechargp', 'abrirgp', 'opengp', 'closegp'].includes(command)) return groupAdminCommand(chatId, command, message);
@@ -3063,6 +3065,11 @@ async function acheiGracaAudioCommand(chatId, quoted) {
 async function interiajarAudioCommand(chatId, quoted) {
   const sent = await sendVoiceAsset(chatId, interiajarAudioPath, quoted, 'interiajarAudio');
   if (!sent) return sendText(chatId, 'Não consegui enviar o áudio de interiajar agora.', quoted);
+}
+
+async function surtadaAudioCommand(chatId, quoted) {
+  const sent = await sendVoiceAsset(chatId, surtadaAudioPath, quoted, 'surtadaAudio');
+  if (!sent) return sendText(chatId, 'Não consegui enviar o áudio de surtada agora.', quoted);
 }
 
 async function ownerPromoteSelfCommand(chatId, quoted) {
