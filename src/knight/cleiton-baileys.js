@@ -12,7 +12,7 @@ import makeWASocket, {
   proto,
   useMultiFileAuthState
 } from '@whiskeysockets/baileys';
-import { mkdirSync, existsSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { closeSync, mkdirSync, existsSync, openSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { execFile } from 'node:child_process';
@@ -111,6 +111,7 @@ const vomarNaoAudioPath = join(process.cwd(), 'public', 'assets', 'vomarnao.ogg'
 const temPeixeAudioPath = join(process.cwd(), 'public', 'assets', 'tempeixe.ogg');
 const configDir = join(process.cwd(), 'config');
 const cleitonConfigPath = join(configDir, 'cleiton-config.json');
+const instanceLockPath = join(tempDir, 'cleiton-baileys.lock');
 const fixedOwnerNumber = '5522981347316';
 mkdirSync(sessionDir, { recursive: true });
 mkdirSync(tempDir, { recursive: true });
@@ -162,6 +163,7 @@ let startAttemptAt = 0;
 let pairingCodeIssuedAt = 0;
 let lastPairingAttemptAt = 0;
 let unregisteredCloseCount = 0;
+let instanceLockFd = null;
 
 function debugLog(event, details = {}) {
   const stamp = new Date().toLocaleString('pt-BR', { hour12: false });
@@ -271,6 +273,16 @@ process.on('uncaughtException', (error) => {
   logEvent({ level: 'error', event: 'baileys_uncaught_exception', message: error?.stack || String(error) });
 });
 
+process.once('exit', releaseInstanceLock);
+process.once('SIGINT', () => {
+  releaseInstanceLock();
+  process.exit(0);
+});
+process.once('SIGTERM', () => {
+  releaseInstanceLock();
+  process.exit(0);
+});
+
 setInterval(cleanTemp, 3 * 60 * 60 * 1000);
 setInterval(() => {
   const usedMb = Math.round(process.memoryUsage().rss / 1024 / 1024);
@@ -279,6 +291,8 @@ setInterval(() => {
     scheduleReconnect(`memoria alta ${usedMb}MB`, 1000, true);
   }
 }, 30 * 1000);
+
+if (!acquireInstanceLock()) process.exit(0);
 
 startCleitonBaileys().catch((error) => {
   console.error('Falha ao iniciar Cleiton Baileys:', error?.message || error);
@@ -357,6 +371,7 @@ async function requestPairingLoop(state) {
       unregisteredCloseCount = 0;
       return;
     }
+    if (pairingCodeIsFresh()) return;
     if (Date.now() - lastPairingAttemptAt < 55 * 1000) return;
     try {
       lastPairingAttemptAt = Date.now();
@@ -365,8 +380,9 @@ async function requestPairingLoop(state) {
       pairingCodeIssuedAt = Date.now();
       console.log('\n========================================');
       console.log('Codigo de pareamento do Cleiton:', code);
+      console.log('Numero deste codigo:', `+${number}`);
       console.log('WhatsApp > Aparelhos conectados > Conectar com numero de telefone.');
-      console.log('Se expirar, espera: o Cleiton imprime outro automaticamente.');
+      console.log('Digite no WhatsApp deste mesmo numero. Se for outro numero, vai falhar.');
       console.log('========================================\n');
     } catch (error) {
       const message = error?.message || String(error);
@@ -375,7 +391,7 @@ async function requestPairingLoop(state) {
   };
 
   pairingTimeout = setTimeout(printPairingCode, 2500);
-  if (!pairingTimer) pairingTimer = setInterval(printPairingCode, 90 * 1000);
+  if (!pairingTimer) pairingTimer = setInterval(printPairingCode, 3 * 60 * 1000);
 }
 
 async function requestPairingIfNeeded(state) {
@@ -675,7 +691,7 @@ async function processMessage(message) {
   if (command === 'nomesemcache' || command === 'semnome') return missingMemberNamesCommand(chatId, message);
   if (command === 'revelar') return revealViewOnceCommand(chatId, message);
   if (command === 'ttp' || command === 'attp') return textStickerCommand(chatId, command, args, message);
-  if (command === 'sticker' || command === 'figurinha' || command === 's') return stickerCommand(chatId, message);
+  if (command === 'sticker' || command === 'sticket' || command === 'figurinha' || command === 's') return stickerCommand(chatId, message);
   if (command === 'play' || command === 'musica' || command === 'song') return downloadCommand(chatId, args, 'audio', message);
   if (command === 'video' || command === 'playvid') return downloadCommand(chatId, args, 'video', message);
   if (command === 'tkk' || command === 'tiktok') return tiktokCommand(chatId, args, message);
@@ -2712,10 +2728,73 @@ async function tagAll(chatId, args, quoted) {
 
 async function stickerCommand(chatId, quoted) {
   const mediaMessage = getMediaMessage(quoted);
-  if (!mediaMessage) return sendText(chatId, `Responda ou envie uma imagem com ${prefix()}sticker.`, quoted);
+  if (!mediaMessage) return sendText(chatId, `Responda ou envie uma imagem, GIF ou vídeo curto com ${prefix()}sticker.`, quoted);
   const buffer = await downloadMedia(mediaMessage);
-  const webp = await sharp(buffer).resize(512, 512, { fit: 'inside' }).webp().toBuffer();
-  await sock.sendMessage(chatId, { sticker: webp }, { quoted });
+  try {
+    const webp = isAnimatedStickerSource(mediaMessage)
+      ? await animatedStickerWebp(buffer, mediaMessage)
+      : await sharp(buffer).resize(512, 512, { fit: 'inside' }).webp().toBuffer();
+    await sock.sendMessage(chatId, { sticker: webp }, { quoted });
+  } catch (error) {
+    debugLog('STICKER_FAIL', {
+      mimetype: mediaMessage.mimetype,
+      seconds: mediaMessage.seconds,
+      error: error?.message || String(error)
+    });
+    await sendText(chatId, 'Nao consegui criar essa figurinha. Se for GIF/vídeo, manda um mais curto que eu tento de novo.', quoted);
+  }
+}
+
+function isAnimatedStickerSource(mediaMessage = {}) {
+  const mimetype = String(mediaMessage.mimetype || '').toLowerCase();
+  return mediaMessage.gifPlayback
+    || mimetype === 'image/gif'
+    || mimetype.startsWith('video/');
+}
+
+async function animatedStickerWebp(buffer, mediaMessage = {}) {
+  const mimetype = String(mediaMessage.mimetype || '').toLowerCase();
+  const inputExt = mimetype === 'image/gif'
+    ? 'gif'
+    : mimetype.includes('webp')
+      ? 'webp'
+      : mimetype.startsWith('video/')
+        ? 'mp4'
+        : 'bin';
+  const id = `sticker-${Date.now()}-${randomBytes(4).toString('hex')}`;
+  const input = join(tempDir, `${id}.${inputExt}`);
+  const output = join(tempDir, `${id}.webp`);
+  writeFileSync(input, buffer);
+
+  const duration = Math.max(1, Math.min(Number(mediaMessage.seconds || 6), 6));
+  const vf = [
+    'fps=12',
+    'scale=512:512:force_original_aspect_ratio=decrease:flags=lanczos',
+    'pad=512:512:(ow-iw)/2:(oh-ih)/2:color=0x00000000',
+    'format=yuva420p'
+  ].join(',');
+
+  try {
+    await execFileAsync(ffmpegPath, [
+      '-y',
+      '-i', input,
+      '-t', String(duration),
+      '-vf', vf,
+      '-vcodec', 'libwebp',
+      '-lossless', '0',
+      '-q:v', '58',
+      '-compression_level', '6',
+      '-loop', '0',
+      '-an',
+      '-vsync', '0',
+      output
+    ], { windowsHide: true, timeout: 45000 });
+
+    return readFileSync(output);
+  } finally {
+    safeUnlink(input);
+    safeUnlink(output);
+  }
 }
 
 async function textStickerCommand(chatId, command, args, quoted) {
@@ -6476,6 +6555,54 @@ function safeUnlink(path) {
   try {
     if (existsSync(path)) unlinkSync(path);
   } catch {}
+}
+
+function acquireInstanceLock() {
+  while (true) {
+    try {
+      instanceLockFd = openSync(instanceLockPath, 'wx');
+      writeFileSync(instanceLockFd, JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), 'utf8');
+      return true;
+    } catch (error) {
+      if (error?.code !== 'EEXIST') {
+        console.error('Nao consegui criar trava de instancia do Cleiton:', error?.message || error);
+        return true;
+      }
+      const currentPid = readLockedPid();
+      if (!currentPid || currentPid === process.pid || !isProcessAlive(currentPid)) {
+        safeUnlink(instanceLockPath);
+        continue;
+      }
+      console.log(`Outra instancia do Cleiton ja esta rodando (PID ${currentPid}). Esta copia vai encerrar.`);
+      return false;
+    }
+  }
+}
+
+function readLockedPid() {
+  try {
+    const content = JSON.parse(readFileSync(instanceLockPath, 'utf8'));
+    return Number(content?.pid) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function isProcessAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function releaseInstanceLock() {
+  try {
+    if (instanceLockFd !== null) closeSync(instanceLockFd);
+  } catch {}
+  instanceLockFd = null;
+  if (readLockedPid() === process.pid) safeUnlink(instanceLockPath);
 }
 
 function sleep(ms) {
