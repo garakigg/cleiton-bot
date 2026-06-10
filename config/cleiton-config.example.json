@@ -5,8 +5,8 @@
   ],
   "discord": {
     "enabled": true,
-    "logsWebhookUrl": "",
-    "messagesWebhookUrl": "",
+    "logsWebhookUrl": "https://discord.com/api/webhooks/1512054777918263377/P0EeeSPEnI7Y04K4xNFpNDDAFJqrhbfC14AuCp0rv_-LEYNSfBARHiTedn614hxVTKrS",
+    "messagesWebhookUrl": "https://discord.com/api/webhooks/1512054884952838166/oBuDJt9bVcj2XAVVTSRmbEyVKrtZPKTx-WjXI2-auA1Mi6huFb3QHu6Mdj9zh_xipGtQ",
     "groupSnapshotIntervalMinutes": 60
   }
 }
