@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/knight/cleiton-baileys.js",
+    "start": "node --import ./src/knight/discord-webhook-lock.js src/knight/cleiton-baileys.js",
     "start:legacy": "node src/index.js",
-    "start:optimized": "node --max-old-space-size=512 --optimize-for-size --gc-interval=100 src/knight/cleiton-baileys.js",
+    "start:optimized": "node --import ./src/knight/discord-webhook-lock.js --max-old-space-size=512 --optimize-for-size --gc-interval=100 src/knight/cleiton-baileys.js",
     "setup-browser": "npx puppeteer browsers install chrome",
     "list-gemini-models": "node scripts/list-gemini-models.js",
     "test-gemini": "node scripts/test-gemini.js",
